@@ -1,13 +1,15 @@
-type PartialRecord<K extends keyof any, T> =  Partial<Record<K, T>>
-  
-type Methods = "get" | "post" | "put" | "post" | "patch" | "delete";
+import { paths } from './testing'
+
+type PartialRecord<K extends keyof any, T> = Partial<Record<K, T>>
+
+type Methods = "get" | "post" | "put" | "post" | "patch" | "delete"
 
 type Endpoint = {
   parameters?: PartialRecord<"path" | "query", { [key: string]: string }>
-  requestBody?: Record<string,any>
+  requestBody?: Record<string, any>
   responses: {
     [key: string]: {
-      content: Record<string,any>
+      content: Record<string, any>
     }
   } | never
 }
@@ -19,6 +21,19 @@ type Endpoints = {
 }
 
 type InferResponse<
-  T extends Endpoints,
-  Path extends keyof T,
-  Method extends keyof T[Path]> = 'response' extends keyof T[Path][Method] ? T[Path][Method]['response'] : never;
+  T extends Partial<{
+    [method in Methods]: Endpoint
+  }>,
+  Method extends keyof T> = 'responses' extends keyof T[Method] ? T[Method]['responses'] : never
+
+type PathToChain<
+  E extends Endpoints,
+  Path extends keyof Endpoints,
+  Original extends string = ''
+  > = Path extends `/${infer P}`
+  ? PathToChain<E, P, Path>
+  : Path extends `${infer P}/${infer R}`
+  ? { [K in P]: PathToChain<E, R, Original> }
+  : {
+    [K in Path extends '' ? 'index' : Path]: E[Original]
+  }
