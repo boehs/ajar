@@ -52,4 +52,22 @@ type UnionToIntersection<U> = (U extends any ? (k: U) => void : never) extends (
   ? I
   : never
 
-type ChainedPaths = UnionToIntersection<PathToChain<paths, keyof paths>>
+const createProxy = (callback, path: string[]) => {
+  const proxy: unknown = new Proxy(() => {}, {
+    get(_obj, key) {
+      if (typeof key !== 'string') return undefined
+      return createProxy(callback, [...path, key])
+    },
+    apply(_1, _2, args) {
+      return callback({
+        path,
+        args,
+      })
+    },
+  })
+  return proxy
+}
+
+export default function Ajar<T extends Endpoints>() {
+  return createProxy(() => '', ['']) as UnionToIntersection<PathToChain<T, keyof T>>
+}
