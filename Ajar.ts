@@ -22,16 +22,16 @@ type Endpoints = {
   [path: string]: Endpoint
 }
 
-type InferResponse<
+type KOfEP<
   T extends Endpoint,
-  Method extends keyof T> = 'responses' extends keyof T[Method] ? T[Method]['responses'] : never
-  
-  type InferInput<
-  T extends Endpoint,
-  Method extends keyof T> = 'parameters' extends keyof T[Method] ? T[Method]['parameters'] : never
+  Method extends keyof T,
+  E extends keyof EndpointTyping
+> = E extends keyof T[Method]
+  ? T[Method][E]
+  : never;
 
 type ToFns<T extends Endpoint> = {
-  [method in keyof T]: (params: InferInput<T,method>) => InferResponse<T,method> 
+  [method in keyof T]: (params: KOfEP<T, method, 'parameters'>) => Promise<KOfEP<T, method,'responses'>>
 }
 
 type PathToChain<
@@ -53,7 +53,7 @@ type UnionToIntersection<U> = (U extends any ? (k: U) => void : never) extends (
   : never
 
 const createProxy = (callback, path: string[]) => {
-  const proxy: unknown = new Proxy(() => {}, {
+  const proxy: unknown = new Proxy(() => { }, {
     get(_obj, key) {
       if (typeof key !== 'string') return undefined
       return createProxy(callback, [...path, key])
