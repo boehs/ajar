@@ -3,6 +3,7 @@ import { paths } from './testing'
 type PartialRecord<K extends keyof any, T> = Partial<Record<K, T>>
 
 type Methods = "get" | "post" | "put" | "post" | "patch" | "delete"
+type JsonTypes = "application/json" | "text/json" | "application/*+json"
 
 type EndpointTyping = {
   parameters?: PartialRecord<"path" | "query", { [key: string]: string }>
@@ -26,12 +27,12 @@ type KOfEP<
   T extends Endpoint,
   Method extends keyof T,
   E extends keyof EndpointTyping
-> = E extends keyof T[Method]
+  > = E extends keyof T[Method]
   ? T[Method][E]
-  : never;
+  : never
 
 type ToFns<T extends Endpoint> = {
-  [method in keyof T]: (params: KOfEP<T, method, 'parameters'>) => Promise<KOfEP<T, method,'responses'>>
+  [method in keyof T]: (params: KOfEP<T, method, 'parameters'>) => Promise<KOfEP<T, method, 'responses'>>
 }
 
 type PathToChain<
@@ -52,22 +53,39 @@ type UnionToIntersection<U> = (U extends any ? (k: U) => void : never) extends (
   ? I
   : never
 
-const createProxy = (callback, path: string[]) => {
+const createProxy = (callback: (path: string, args: Partial<{
+  [param in 'path' | 'query' | 'body']: { [key: string]: string }
+}>) => Promise<any>, path: string[]) => {
   const proxy: unknown = new Proxy(() => { }, {
     get(_obj, key) {
       if (typeof key !== 'string') return undefined
       return createProxy(callback, [...path, key])
     },
     apply(_1, _2, args) {
-      return callback({
-        path,
-        args,
-      })
+      return callback(path.join('/'), args)
     },
   })
   return proxy
 }
 
-export default function Ajar<T extends Endpoints>() {
-  return createProxy(() => '', ['']) as UnionToIntersection<PathToChain<T, keyof T>>
+export default function Ajar<T extends Endpoints>(opts?: {
+  fetch?: typeof fetch
+}) {
+  return createProxy(async (path, args) => {
+    let query: string | undefined
+
+    if (args.query) {
+      const searchQuery = new URLSearchParams()
+      Object.keys(args.query).forEach(key => searchQuery.append(key, args.query[key]))
+      query = '?' + searchQuery.toString()
+    }
+
+
+    return new Promise((r) => r(''))
+  }, []) as UnionToIntersection<PathToChain<T, keyof T>>
 }
+Ajar<paths>().api.projects.get({
+  'query': {
+    'SpaceId': 'e'
+  }
+})
