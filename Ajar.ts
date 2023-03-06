@@ -43,8 +43,11 @@ type PathToChain<
     ? PathToChain<E, P, Path>
     // Known issue, doesn't work with {id}-{id-2} or whatever
     : Path extends `{${infer P}}${infer N}`
-      // K should be infered from method's parameters, but too lasy
-      ? { [K: string]: PathToChain<E, N, Original> }
+      // This fixes the bug with `Path extends `/${infer P}`` at the top
+      ? N extends `/${infer N2}`
+        // K should be infered from method's parameters, but too lasy
+        ? { [K: string]: PathToChain<E, N2, Original> }
+        : { [K: string]: PathToChain<E, N, Original> }
       : Path extends `${infer P}/${infer R}`
         ? { [K in P]: PathToChain<E, R, Original> }
         : Path extends ''
@@ -90,5 +93,3 @@ export default function Ajar<T extends Endpoints>(opts?: {
     return new Promise((r) => r(''))
   }, []) as UnionToIntersection<PathToChain<T, keyof T>>
 }
-
-Ajar<paths>().api.auth.login.get
