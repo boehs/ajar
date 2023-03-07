@@ -1,5 +1,3 @@
-import { paths } from './testing'
-
 type PartialRecord<K extends keyof any, T> = Partial<Record<K, T>>
 
 type Methods = "get" | "post" | "put" | "post" | "patch" | "delete"
