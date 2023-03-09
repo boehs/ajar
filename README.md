@@ -43,6 +43,7 @@ Ajar is not currently usable. Almost all typing work has been completed, however
 - [x] 🟦 Support parameters in the chained type  
 - [ ] 🟨 Create basic fetch client inside the proxy callback
 - [ ] 🟦 Type response
+- [ ] ⭐ Regression tests
 
 ## Credits
 
