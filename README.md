@@ -10,9 +10,11 @@ client.user["500"].get()
 client.posts.post()
 ```
 
-Because it is implemented almost entirely using TypeScript's extensive type system, Ajar is largely capable of 'dissolving' during code compilation. In your app's bundle, all that remains is a lightweight core library that does not grow over time.
+Because it is implemented almost entirely using TypeScript's extensive type system, Ajar is largely capable of 'dissolving' during code compilation. In your app's bundle, all that remains is a lightweight[^1] core library that does not grow over time.
 
 Currently, Ajar only implements a small subset of the OpenAPI specification, however it should be more than enough for almost every project.
+
+[^1]: When the core JavaScript is complete I'll have concrete numbers, however I'm positive it will not exceed 1kb. In addition, an optimization push will be made before every release
 
 ## How it works
 
