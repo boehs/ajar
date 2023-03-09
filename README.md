@@ -5,9 +5,9 @@ Ajar is an O(1) fetch client for APIs that implement the OpenAPI specification. 
 ```ts
 const client = Ajar<paths>()
 
-client.feed.get()
-client.user["500"].get()
-client.posts.post()
+client.feeds.get()
+client.user["500"].comments.post()
+client.user["500"].posts["3"].get()
 ```
 
 Because it is implemented almost entirely using TypeScript's extensive type system, Ajar is largely capable of 'dissolving' during code compilation. In your app's bundle, all that remains is a lightweight[^1] core library that does not grow over time.
