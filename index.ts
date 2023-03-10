@@ -30,7 +30,7 @@ type KOfEP<
   : never
 
 type ToFns<T extends Endpoint> = {
-  [method in keyof T]: (params: KOfEP<T, method, 'parameters'>) => Promise<KOfEP<T, method, 'responses'>>
+  [method in keyof T]: (params: KOfEP<T, method, 'parameters'>) => KOfEP<T, method, 'responses'>
 }
 
 type PathToChain<
@@ -60,7 +60,7 @@ type UnionToIntersection<U> = (U extends any ? (k: U) => void : never) extends (
   ? I
   : never
 
-const createProxy = (callback: (path: string, args: Partial<{
+const createProxy = (callback: (path: string[], args: Partial<{
   [param in 'path' | 'query' | 'body']: { [key: string]: string }
 }>) => Promise<any>, path: string[]) => {
   const proxy: unknown = new Proxy(() => { }, {
@@ -69,16 +69,18 @@ const createProxy = (callback: (path: string, args: Partial<{
       return createProxy(callback, [...path, key])
     },
     apply(_1, _2, args) {
-      return callback(path.join('/'), args)
+      return callback(path, args[0])
     },
   })
   return proxy
 }
 
 export default function Ajar<T extends Endpoints>(opts?: {
-  fetch?: typeof fetch
-}) {
-  return createProxy(async (path, args) => {
+  fetch?: typeof fetch,
+  base?: string
+  defaults?: RequestInit
+} = {}) {
+  return createProxy((path, args) => {
     let query: string | undefined
 
     if (args.query) {
@@ -86,8 +88,18 @@ export default function Ajar<T extends Endpoints>(opts?: {
       Object.keys(args.query).forEach(key => searchQuery.append(key, args.query[key]))
       query = '?' + searchQuery.toString()
     }
-
-
-    return new Promise((r) => r(''))
+    
+    let method = path.pop()
+    
+    const url = (opts.base || '') + path.join('/') + (query || '')
+    
+    const m: RequestInit = {
+      ...opts.defaults,
+      method: method
+    }
+    return {
+      compile: () => [url,m] as const
+    }
+    
   }, []) as UnionToIntersection<PathToChain<T, keyof T>>
 }
