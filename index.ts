@@ -37,17 +37,13 @@ type PathToChain<
   E extends Endpoints,
   Path extends keyof E,
   Original extends string = ''
-  > = Path extends `/${infer P}`
-    ? PathToChain<E, P, Path>
+  > = Path extends `/${infer Part}`
+    ? PathToChain<E, Part, Path>
     // Known issue, doesn't work with {id}-{id-2} or whatever
-    : Path extends `{${infer P}}${infer N}`
-      // This fixes the bug with `Path extends `/${infer P}`` at the top
-      ? N extends `/${infer N2}`
-        // K should be infered from method's parameters, but too lasy
-        ? { [K: string]: PathToChain<E, N2, Original> }
-        : { [K: string]: PathToChain<E, N, Original> }
-      : Path extends `${infer P}/${infer R}`
-        ? { [K in P]: PathToChain<E, R, Original> }
+    : Path extends `{${infer Param}}${infer Next}`
+        ? { [K: string]: PathToChain<E, Next extends `/${infer N2}` ? N2 : Next, Original>[] }
+      : Path extends `${infer Current}/${infer Next}`
+        ? { [K in Current]: PathToChain<E, Next, Original> }
         : Path extends ''
           ? ToFns<E[Original]>
           : {
@@ -89,13 +85,13 @@ export default function Ajar<T extends Endpoints>(opts?: {
       query = '?' + searchQuery.toString()
     }
     
-    let method = path.pop()
+    let method = path.pop()!
     
     const url = (opts.base || '') + path.join('/') + (query || '')
     
     const m: RequestInit = {
       ...opts.defaults,
-      method: method
+      method: method.toUpperCase()
     }
     return {
       compile: () => [url,m] as const
